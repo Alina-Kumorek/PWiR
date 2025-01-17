@@ -1,0 +1,29 @@
+services:
+  hello-world:
+    image: traefik/whoami
+    # ports:
+    #   - 8080:80
+
+    deploy:
+      mode: replication
+      replicas: 2
+    labels:
+      - "traefik.http.routers.whoami.rule=Host(`whoami.docker.localhost`)"
+
+  loadbalancer:
+    image: traefik:latest
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    
+    # Enables the web UI and tells Traefik to listen to docker
+    command:
+      - --api.insecure=true
+      - --providers.docker
+      - --log.level=DEBUG
+
+    volumes:
+      # So that Traefik can listen to the Docker events
+      # Wersja na Linux: /var/run/docker.sock:/var/run/docker.sock
+      - //var/run/docker.sock:/var/run/docker.sock

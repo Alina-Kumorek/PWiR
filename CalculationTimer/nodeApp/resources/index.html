@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Calculation Timer</title>
+</head>
+<body>
+
+<h2>Formularz</h2>
+
+<form id="form"> 
+    <label for="n">Maxymalny rozmiar macierzy:</label><br>
+    <input type="number" name="n" min="10" max="1000" step="10" value="100"><br>
+    <label for="m">Liczba pomiarów:</label><br>
+    <input type="number" name="m" min="1" max="100" value="10"><br>
+    <label for="o">Liczba rozmiarów:</label><br>
+    <input type="number" name="o" min="5" max="1000" step="5" value="10"><br>
+    <input type="button" onclick="postData()" value="Submit">
+    <input type="reset" value="Reset">
+</form>
+
+<h2>Wykres</h2>
+
+<div>
+    <canvas id="myChart"></canvas>
+</div>
+
+<p id="timer"></p> 
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+    var xChart = null;
+
+    async function postData() {
+        
+        const form = document.getElementById('form');
+        const formData = new FormData();
+        formData.append('n', form.n.value);
+        formData.append('m', form.m.value);
+        formData.append('o', form.o.value);
+
+        try {
+            const response = await fetch("http://flask.docker.localhost/run", {
+                method: 'POST',
+                body: formData
+                });
+                const myObject = await response.json();
+
+            if (!response.ok) {
+                console.log(`POST failed with ${response.status}.`);
+            } else {
+                console.log(response);
+                console.log(myObject);
+                makeChart(myObject);
+            }
+                
+            } catch(error) {
+                console.log(error)
+            } 
+    }
+
+    async function makeChart(myArr) {
+
+        const ctx = document.getElementById('myChart');
+
+        const data = {
+            datasets: [
+                {
+                label: 'Iteracja Prosta',
+                data: myArr.prosta,
+                backgroundColor: 'rgb(160, 43, 147)'
+                },
+                {
+                label: 'Iteracja Richardsona',
+                data: myArr.richardson,
+                backgroundColor: 'rgb(78, 167, 46)'
+                }
+            ],
+        };
+
+        const config = {
+            type: 'scatter',
+            data: data,
+            options: {
+                scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    title: {
+                        display: true,
+                        text: "Wielkość macierzy"
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: "Czas [s]"
+                    }
+                }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }}
+            }
+        };
+
+        if(xChart){
+            xChart.clear();
+            xChart.destroy();
+        }
+
+        xChart = new Chart(ctx, config);
+
+        const timer = document.getElementById("timer");
+        timer.innerHTML = "Czas: " + myArr.timer + " s";
+
+    }
+
+</script>
+
+
+</body>
+</html> 

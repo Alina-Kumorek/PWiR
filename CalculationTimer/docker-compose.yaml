@@ -1,0 +1,42 @@
+services:
+  flask:
+    build: /calculatorApp
+    # ports:
+    #   - "8000:5000"
+    develop:
+      watch:
+        - action: sync
+          path: /calculatorApp
+          target: /code
+    deploy:
+      mode: replication
+      replicas: 2
+    labels:
+      - "traefik.http.routers.flask-http.rule=Host(`flask.docker.localhost`)"
+
+  node:
+    build: /nodeApp
+    # ports:
+    #   - "80:8080"
+    develop:
+      watch:
+        - action: sync
+          path: ./nodeApp
+          target: /home/node/app
+    labels:
+      - "traefik.http.routers.node-http.rule=Host(`node.docker.localhost`)"
+  
+  loadbalancer:
+    image: traefik:latest
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    
+    command:
+      - --api.insecure=true
+      - --providers.docker
+      - --log.level=DEBUG
+
+    volumes:
+      - //var/run/docker.sock:/var/run/docker.sock
